@@ -1,0 +1,5 @@
+student_id,student_name,grade,teacher,assessment,cycle,date,score,benchmark,expected_growth
+900001,Sample Student A,3,Room 12,Running Record Level,1,2025-09-02,14,16,2
+900001,Sample Student A,3,Room 12,Running Record Level,2,2025-10-28,16,18,2
+900002,Sample Student B,3,Room 12,Running Record Level,1,2025-09-02,17,16,2
+900002,Sample Student B,3,Room 12,Running Record Level,2,2025-10-28,18,18,2

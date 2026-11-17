@@ -337,7 +337,7 @@ footer a { color: var(--accent); }
 }
 .std-editor p { margin: 0; }
 .std-editor code { background: var(--surface-2); padding: 0 4px; border-radius: 4px; }
-.std-edit-row { display: grid; grid-template-columns: 1fr 130px 56px; gap: 8px; align-items: center; font-size: 0.88rem; }
+.std-edit-row { display: grid; grid-template-columns: 1fr 130px 90px; gap: 8px; align-items: center; font-size: 0.88rem; }
 .ns-pop {
   position: fixed; z-index: 18; width: 330px; max-width: calc(100vw - 24px); pointer-events: none;
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
@@ -353,3 +353,4 @@ footer a { color: var(--accent); }
 .ns-panel { background: var(--accent-soft); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; }
 @media (hover: none) { .ns-pop { display: none; } }
 .std-editor .std-edit-row { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink); font-size: 0.88rem; }
+.std-edit-head { font-weight: 700; }

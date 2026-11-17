@@ -1,7 +1,9 @@
+import { standardFor } from './standards.js';
+
 // Suggest small intervention groups from the latest cycle's results.
 // Two modes:
 //   level - sort students by distance from benchmark and cut into even groups
-//   skill - (IXL only) group students who share the same weakest strand
+//   skill - group students who share the same weakest skill (needs skill scores)
 
 export const TIERS = [
   { id: 'intensive', label: 'Intensive', focus: 'Intensive support', rank: 1, test: (g) => g < -3 },
@@ -104,10 +106,10 @@ export function suggestGroups(summaries, { maxSize = 5, sameGrade = true, mode =
   return groups.map((g, i) => ({ ...g, name: `Group ${String.fromCharCode(65 + (i % 26))}${i >= 26 ? Math.floor(i / 26) : ''}` }));
 }
 
-export function groupsToCsv(groups, src) {
-  const header = ['Group', 'Focus', 'Pool', 'Student ID', 'Student', 'Grade', `Latest (${src.unit})`, 'Benchmark', 'Status', 'Change since last cycle'];
+export function groupsToCsv(groups, src, standards) {
+  const header = ['Group', 'Focus', 'Focus standard', 'Pool', 'Student ID', 'Student', 'Grade', `Latest (${src.unit})`, 'Benchmark', 'Status', 'Change since last cycle'];
   const rows = groups.flatMap((g) => g.members.map((m) => [
-    g.name, g.focus, g.pool, m.studentId, m.name, m.grade, m.latest.score, m.latest.benchmark, m.status.label,
+    g.name, g.focus, standardFor(g.focus, m.grade, standards)?.code ?? '', g.pool, m.studentId, m.name, m.grade, m.latest.score, m.latest.benchmark, m.status.label,
     m.move === 'up' ? `Up from ${m.tierBefore.label}` : m.move === 'down' ? `Down from ${m.tierBefore.label}` : m.move === 'new' ? 'New' : 'Same tier',
   ]));
   return [header, ...rows].map((r) => r.map((v) => (/[",]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',')).join('\n');

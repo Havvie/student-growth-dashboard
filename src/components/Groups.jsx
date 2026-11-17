@@ -1,10 +1,11 @@
 import { formatScore } from '../lib/metrics.js';
 import { groupsToCsv } from '../lib/grouping.js';
 import { downloadText } from '../lib/download.js';
+import { standardFor } from '../lib/standards.js';
 
 const MOVE_TEXT = { up: (m) => `↑ from ${m.tierBefore.label}`, down: (m) => `↓ from ${m.tierBefore.label}`, new: () => 'new', same: () => '' };
 
-export default function Groups({ groups, opts, setOpts, src, canSkill, asOfCycle, onOpen }) {
+export default function Groups({ groups, opts, setOpts, src, canSkill, asOfCycle, onOpen, standards }) {
   const moved = groups.flatMap((g) => g.members).filter((m) => m.move === 'up' || m.move === 'down');
   return (
     <section className="card" aria-labelledby="groups-title">
@@ -16,7 +17,7 @@ export default function Groups({ groups, opts, setOpts, src, canSkill, asOfCycle
             {opts.mode === 'skill' ? ', after pooling by their weakest strand' : ''}. Arrows show tier changes since cycle {asOfCycle - 1}.
           </p>
         </div>
-        <button className="btn" onClick={() => downloadText(groupsToCsv(groups, src), `groups_${src.id}_cycle${asOfCycle}.csv`)}>Download groups (.csv)</button>
+        <button className="btn" onClick={() => downloadText(groupsToCsv(groups, src, standards), `groups_${src.id}_cycle${asOfCycle}.csv`)}>Download groups (.csv)</button>
       </div>
 
       <div className="group-opts">
@@ -46,7 +47,11 @@ export default function Groups({ groups, opts, setOpts, src, canSkill, asOfCycle
               <h3>{g.name} <span className="muted small">· {g.pool}</span></h3>
               <span className={`tier ${g.tier.id}`}>{g.tier.label}</span>
             </div>
-            <div className="focus">Focus: <strong>{g.focus}</strong></div>
+            <div className="focus">Focus: <strong>{g.focus}</strong>{(() => {
+              const grade = /^Grade (\d+)$/.exec(g.pool)?.[1];
+              const std = grade ? standardFor(g.focus, Number(grade), standards) : null;
+              return std ? <span className="std" title={std.title}>{std.code}</span> : null;
+            })()}</div>
             <ul className="members">
               {g.members.map((m) => (
                 <li key={m.studentId}>

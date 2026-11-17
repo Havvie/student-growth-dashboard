@@ -6,7 +6,7 @@ A React dashboard that turns raw assessment exports into the answers an interven
 - **Who is off track, and why?**
 - **How should small groups change this cycle?**
 
-Drop in IXL, Amira or Illuminate style CSV exports, use the simple template for any other assessment, or type scores straight into the app. It cleans the data, charts growth across data cycles, flags off-track students with a plain-English reason, and suggests new intervention groups you can download.
+Drop in CSV exports from a math diagnostic, a reading screener or an ELA benchmark, use the simple template for any other assessment, or type scores straight into the app. It cleans the data, charts growth across data cycles, flags off-track students with a plain-English reason, and suggests new intervention groups you can download. Skills are tagged with standard codes (Common Core by default, or your state's own codes), and hovering over a student shows their next best steps.
 
 **[Live demo](https://havvie.github.io/student-growth-dashboard/)** · All data in the demo is made up.
 
@@ -29,6 +29,8 @@ Cycle Check is the tool I wanted at those meetings. It puts different assessment
 | **Student drawer** | Score by cycle with the benchmark and a dashed projection, plus skill scores with the weakest skill highlighted. |
 | **Regrouping suggestions** | Groups by overall level or by shared weakest skill (math strands, reading skills or ELA domains), with a group-size limit and an option to keep grades separate. Shows which students moved up or down a tier since last cycle. Download as CSV. |
 | **Enter your own data** | No export? Name the assessment, set a cycle 1 benchmark per grade and the expected growth per cycle, then type scores in or paste rows from Google Sheets or Excel. Add optional skill columns to unlock weakest-skill groups. Entries are saved in the browser, show up under a *My data* tab with every chart and flag, and download as a CSV you can import later. |
+| **Standards** | Every skill is tagged with a standard code for the student's grade, such as `3.NF` or `RF.2.3`. Common Core is built in. Pick *My state's codes* to type your state's codes once, using `{g}` for the grade (for example `{g}.NR.4`). They're saved in the browser and used everywhere, including the groups CSV. |
+| **Next best steps** | Hover over (or tab to) a student to see their focus skill and its standard, two classroom-ready moves for that skill, a recommendation based on their growth pace, and their suggested group. The same card appears in the student drawer for touch screens. |
 | **Private by design** | Everything runs in the browser. Imported files are never uploaded anywhere. |
 | **Accessible** | Status is shown with an icon and a word, never color alone. Keyboard-navigable table, light and dark themes, and a highly legible typeface (Atkinson Hyperlegible). |
 
@@ -36,11 +38,13 @@ Cycle Check is the tool I wanted at those meetings. It puts different assessment
 |---|---|
 | ![Student detail](docs/screenshots/student-detail.png) | ![Suggested groups](docs/screenshots/groups.png) |
 
-| Enter your own data | Dark mode |
+| Next best steps on hover | Enter your own data |
 |---|---|
-| ![Enter your own data](docs/screenshots/enter-data.png) | ![Dark mode](docs/screenshots/dark-mode.png) |
+| ![Next best steps](docs/screenshots/next-steps.png) | ![Enter your own data](docs/screenshots/enter-data.png) |
 
-![Data import report](docs/screenshots/import-report.png)
+| Data import report | Dark mode |
+|---|---|
+| ![Data import report](docs/screenshots/import-report.png) | ![Dark mode](docs/screenshots/dark-mode.png) |
 
 ## How growth is measured
 
@@ -48,9 +52,9 @@ Each assessment defines a benchmark for every grade and cycle, and how much grow
 
 | Assessment | Unit | Benchmark | Expected growth per cycle |
 |---|---|---|---|
-| IXL-style Diagnostic (Math) | diagnostic level | grade × 100 at cycle 1 (e.g. 300 = ready for 3rd grade) | +30 |
-| Amira-style ARM (Reading) | grade-level equivalent | the student's grade at cycle 1 (e.g. 3.0) | +0.3 |
-| Illuminate-style Benchmark (ELA) | percent correct | 70% every cycle (new standards each test) | hold at 70%+ |
+| Math Diagnostic | scale score | grade × 100 at cycle 1 (e.g. 300 = ready for 3rd grade) | +30 |
+| Reading Screener | grade-level equivalent | the student's grade at cycle 1 (e.g. 3.0) | +0.3 |
+| ELA Benchmark | percent correct | 70% every cycle (new standards each test) | hold at 70%+ |
 | Custom CSV | your units | from the `benchmark` column | from the `expected_growth` column |
 
 For each student:
@@ -75,7 +79,11 @@ student_id,student_name,grade,teacher,assessment,cycle,date,score,benchmark,expe
 900001,Sample Student A,3,Room 12,Running Record,1,2025-09-02,14,16,2,level,12
 ```
 
-The IXL, Amira and Illuminate layouts in [`public/sample-data`](public/sample-data) are simplified approximations of those platforms' exports. Real exports vary by district settings, so map columns in [`src/lib/sources.js`](src/lib/sources.js) if yours differ. This project is not affiliated with IXL Learning, Amira Learning or Illuminate Education.
+The three built-in formats in [`public/sample-data`](public/sample-data) use generic column names, and each one also accepts a few common alternative headers. Real exports vary by platform and district, so add aliases or a new format in [`src/lib/sources.js`](src/lib/sources.js) if yours differ.
+
+## Standards
+
+[`src/lib/standards.js`](src/lib/standards.js) maps each skill to a Common Core domain or cluster, for example Fractions → `{g}.NF` (grade 2 uses `2.G.A.3`) and Phonics → `RF.{g}.3`. States with their own standards can type codes in the app, or add a new set to `STANDARD_SETS` so it shows up in the picker for everyone. The next-step suggestions live in [`src/lib/nextSteps.js`](src/lib/nextSteps.js).
 
 > **Student privacy:** never commit real student data to a repository. The demo data is generated by [`scripts/generate-sample-data.mjs`](scripts/generate-sample-data.mjs) from a fixed random seed. Every name, ID and score is invented, and a few realistic data problems (a duplicate row, a blank score, extra spaces in a name, a mid-year enrollee) are planted on purpose to exercise the import checks.
 
@@ -93,6 +101,8 @@ src/
     sources.js      assessment formats, benchmarks, cycle windows
     parsers.js      CSV detection, cleaning, data-quality report
     manual.js       typed/pasted data, saved in the browser, exported as CSV
+    standards.js    skill → standard code (Common Core or custom)
+    nextSteps.js    focus skill and suggested moves for each student
     metrics.js      growth slope, projection, status and flags
     grouping.js     regrouping suggestions and CSV export
   components/       charts, roster table, student drawer, groups, import panel

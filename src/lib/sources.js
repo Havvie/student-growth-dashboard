@@ -3,7 +3,8 @@
 // record, and what "on grade level" means for that assessment at each data cycle.
 //
 // Column layouts are simplified approximations of common K-12 exports, built for
-// made-up demo data. This project is not affiliated with IXL, Amira or Illuminate.
+// made-up demo data. Each detector also accepts a few common alternative column names,
+// so similar exports from other platforms can be read without code changes.
 
 export const TOTAL_CYCLES = 4;
 
@@ -45,14 +46,18 @@ const grade = (v) => {
 };
 const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 const has = (headers, ...names) => names.every((n) => headers.includes(n.toLowerCase()));
-const get = (row, name) => {
-  const key = Object.keys(row).find((k) => k.trim().toLowerCase() === name.toLowerCase());
-  return key == null ? undefined : row[key];
+// Read the first column that exists among several possible header names.
+const get = (row, ...names) => {
+  for (const name of names) {
+    const key = Object.keys(row).find((k) => k.trim().toLowerCase() === name.toLowerCase());
+    if (key != null) return row[key];
+  }
+  return undefined;
 };
 
-export const IXL_STRANDS = ['Number sense', 'Algebra and algebraic thinking', 'Fractions', 'Geometry', 'Data and measurement'];
-export const AMIRA_SKILLS = ['Phonics', 'Fluency', 'Vocabulary', 'Comprehension'];
-export const ILLUMINATE_SKILLS = ['Key ideas and details', 'Craft and structure', 'Vocabulary in context', 'Language conventions'];
+export const MATH_SKILLS = ['Number sense', 'Algebra and algebraic thinking', 'Fractions', 'Geometry', 'Data and measurement'];
+export const READING_SKILLS = ['Phonics', 'Fluency', 'Vocabulary', 'Comprehension'];
+export const ELA_SKILLS = ['Key ideas and details', 'Craft and structure', 'Vocabulary in context', 'Language conventions'];
 
 // Read skill/strand columns into { skill: score }, skipping blanks.
 const skillsFrom = (row, names, suffix = '') => Object.fromEntries(
@@ -60,32 +65,32 @@ const skillsFrom = (row, names, suffix = '') => Object.fromEntries(
 );
 
 export const SOURCES = {
-  ixl: {
-    id: 'ixl',
-    label: 'IXL Diagnostic',
+  math: {
+    id: 'math',
+    label: 'Math Diagnostic',
     subject: 'Math',
-    unit: 'level',
-    unitLong: 'diagnostic level',
+    unit: 'pts',
+    unitLong: 'scale score',
     unitPlural: 'points',
     decimals: 0,
     expectedGrowth: 30, // points per cycle for a year of growth across 4 cycles (~90-100/yr)
     gapUnit: 30,
     // 300 = ready for the start of 3rd grade; +30 each cycle.
     benchmark: (g, c) => g * 100 + 30 * (c - 1),
-    detect: (h) => has(h, 'overall level', 'diagnostic date'),
+    detect: (h) => has(h, 'scale score', 'test date') || has(h, 'overall level', 'diagnostic date'),
     toRecord: (row) => ({
       studentId: clean(get(row, 'Student ID')),
       name: clean(get(row, 'Student name')),
       grade: grade(get(row, 'Grade')),
       teacher: clean(get(row, 'Teacher')),
-      date: clean(get(row, 'Diagnostic date')),
-      score: num(get(row, 'Overall level')),
-      strands: skillsFrom(row, IXL_STRANDS),
+      date: clean(get(row, 'Test date', 'Diagnostic date')),
+      score: num(get(row, 'Scale score', 'Overall level')),
+      strands: skillsFrom(row, MATH_SKILLS),
     }),
   },
-  amira: {
-    id: 'amira',
-    label: 'Amira ARM',
+  reading: {
+    id: 'reading',
+    label: 'Reading Screener',
     subject: 'Reading',
     unit: 'GE',
     unitLong: 'grade-level equivalent',
@@ -94,21 +99,21 @@ export const SOURCES = {
     expectedGrowth: 0.3,
     gapUnit: 0.3,
     benchmark: (g, c) => g + 0.3 * (c - 1),
-    detect: (h) => has(h, 'arm (grade level)'),
+    detect: (h) => has(h, 'reading level (grade level)') || has(h, 'arm (grade level)'),
     toRecord: (row) => ({
       studentId: clean(get(row, 'Student ID')),
       name: clean(`${get(row, 'Student First Name') ?? ''} ${get(row, 'Student Last Name') ?? ''}`),
       grade: grade(get(row, 'Grade')),
       teacher: clean(get(row, 'Class')),
       date: clean(get(row, 'Assessment Date')),
-      score: num(get(row, 'ARM (Grade Level)')),
+      score: num(get(row, 'Reading level (Grade Level)', 'ARM (Grade Level)')),
       extra: { WCPM: num(get(row, 'WCPM')) },
-      strands: skillsFrom(row, AMIRA_SKILLS, ' (Grade Level)'),
+      strands: skillsFrom(row, READING_SKILLS, ' (Grade Level)'),
     }),
   },
-  illuminate: {
-    id: 'illuminate',
-    label: 'Illuminate Benchmark',
+  ela: {
+    id: 'ela',
+    label: 'ELA Benchmark',
     subject: 'ELA',
     unit: '%',
     unitLong: 'percent correct',
@@ -130,7 +135,7 @@ export const SOURCES = {
         cycle: m ? Number(m[1]) : null,
         score: num(get(row, 'Percent Correct')),
         testTitle: title,
-        strands: skillsFrom(row, ILLUMINATE_SKILLS, ' (% correct)'),
+        strands: skillsFrom(row, ELA_SKILLS, ' (% correct)'),
       };
     },
   },

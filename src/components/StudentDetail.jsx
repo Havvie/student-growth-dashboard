@@ -4,6 +4,8 @@ import { TOTAL_CYCLES } from '../lib/sources.js';
 import { formatScore, signed } from '../lib/metrics.js';
 import { weakestStrand } from '../lib/grouping.js';
 import StatusPill from './StatusPill.jsx';
+import { NextStepsBody } from './NextSteps.jsx';
+import { standardFor } from '../lib/standards.js';
 
 function Tip({ active, payload, src }) {
   if (!active || !payload?.length) return null;
@@ -18,7 +20,7 @@ function Tip({ active, payload, src }) {
   );
 }
 
-export default function StudentDetail({ student: s, onClose }) {
+export default function StudentDetail({ student: s, onClose, standards, groupName }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -44,7 +46,7 @@ export default function StudentDetail({ student: s, onClose }) {
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="detail-title">
         <div className="drawer-head">
           <div>
-            <div className="eyebrow">{src.label} · {src.subject}</div>
+            <div className="eyebrow">{src.label.toLowerCase().startsWith(src.subject.toLowerCase()) ? src.label : `${src.label} · ${src.subject}`}</div>
             <h2 id="detail-title">{s.name}</h2>
             <div className="muted small">Grade {s.grade}{s.teacher ? ` · ${s.teacher}` : ''} · ID {s.studentId}</div>
           </div>
@@ -81,6 +83,11 @@ export default function StudentDetail({ student: s, onClose }) {
           </div>
         </div>
 
+        <div className="ns-panel">
+          <h3>Next best steps</h3>
+          <NextStepsBody student={s} standards={standards} groupName={groupName} />
+        </div>
+
         <div>
           <h3>Why this status</h3>
           {s.flags.length
@@ -98,7 +105,7 @@ export default function StudentDetail({ student: s, onClose }) {
               const pct = (x) => `${Math.max(0, Math.min(100, ((x - lo) / (hi - lo)) * 100))}%`;
               return (
                 <div className={`strand ${weak?.name === name ? 'weak' : ''}`} key={name}>
-                  <span>{name}{weak?.name === name ? ' (weakest)' : ''}</span>
+                  <span>{name}{weak?.name === name ? ' (weakest)' : ''}{standardFor(name, s.grade, standards) && <small className="std-inline">{standardFor(name, s.grade, standards).code}</small>}</span>
                   <span className="bar"><span style={{ width: pct(v) }} /><i style={{ left: pct(s.latest.benchmark) }} /></span>
                   <span className="num r">{formatScore(v, src)}</span>
                 </div>

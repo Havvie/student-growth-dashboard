@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { formatScore, signed } from '../lib/metrics.js';
 import StatusPill from './StatusPill.jsx';
 import Sparkline from './Sparkline.jsx';
+import NextStepsPopover from './NextSteps.jsx';
 
 const SORTS = {
   name: (a, b) => a.name.localeCompare(b.name),
@@ -12,7 +13,9 @@ const SORTS = {
   status: (a, b) => a.status.rank - b.status.rank || (a.gap ?? 0) - (b.gap ?? 0),
 };
 
-export default function Roster({ summaries, cycles, src, onOpen }) {
+export default function Roster({ summaries, cycles, src, onOpen, standards, groupOf }) {
+  const [hover, setHover] = useState(null);
+  const showTip = (student, el) => setHover({ student, rect: el.getBoundingClientRect() });
   const [sort, setSort] = useState({ key: 'status', dir: 1 });
   const [show, setShow] = useState('all');
   const [q, setQ] = useState('');
@@ -38,7 +41,7 @@ export default function Roster({ summaries, cycles, src, onOpen }) {
       <div className="card-head">
         <div>
           <h2 id="roster-title">Students</h2>
-          <p>Click a student to see their scores, projection and why they were flagged.</p>
+          <p>Hover over a student for their next best steps. Click for scores, projection and why they were flagged.</p>
         </div>
         <div className="filter-row">
           <div className="seg" role="group" aria-label="Show students">
@@ -68,6 +71,9 @@ export default function Roster({ summaries, cycles, src, onOpen }) {
               const byCycle = new Map(s.points.map((p) => [p.cycle, p.score]));
               return (
                 <tr key={s.studentId} onClick={() => onOpen(s.studentId)} tabIndex={0}
+                  aria-describedby={hover?.student.studentId === s.studentId ? 'next-steps-tip' : undefined}
+                  onMouseEnter={(e) => showTip(s, e.currentTarget)} onMouseLeave={() => setHover(null)}
+                  onFocus={(e) => showTip(s, e.currentTarget)} onBlur={() => setHover(null)}
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen(s.studentId))}>
                   <td className="name">{s.name}</td>
                   <td className="r num">{s.grade}</td>
@@ -84,6 +90,7 @@ export default function Roster({ summaries, cycles, src, onOpen }) {
           </tbody>
         </table>
       </div>
+      <NextStepsPopover hover={hover} standards={standards} groupOf={groupOf} />
     </section>
   );
 }

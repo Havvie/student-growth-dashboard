@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { slope, studentSummaries } from './metrics.js';
 
-const rec = (id, grade, cycle, score) => ({ assessment: 'ixl', studentId: id, name: `S${id}`, grade, cycle, score, benchmark: grade * 100 + 30 * (cycle - 1) });
+const rec = (id, grade, cycle, score) => ({ assessment: 'math', studentId: id, name: `S${id}`, grade, cycle, score, benchmark: grade * 100 + 30 * (cycle - 1) });
 
 describe('slope', () => {
   it('is the least-squares growth per cycle', () => {
@@ -21,7 +21,7 @@ describe('studentSummaries', () => {
     // one score so far, below benchmark
     rec('d', 3, 3, 300),
   ];
-  const byId = Object.fromEntries(studentSummaries(records, 'ixl', 3).map((s) => [s.studentId, s]));
+  const byId = Object.fromEntries(studentSummaries(records, 'math', 3).map((s) => [s.studentId, s]));
 
   it('labels each student', () => {
     expect(byId.a.status.id).toBe('onTrack');
@@ -37,7 +37,7 @@ describe('studentSummaries', () => {
   });
 
   it('ignores cycles after the as-of cycle', () => {
-    const asOf2 = studentSummaries(records, 'ixl', 2).find((s) => s.studentId === 'a');
+    const asOf2 = studentSummaries(records, 'math', 2).find((s) => s.studentId === 'a');
     expect(asOf2.latest.cycle).toBe(2);
   });
 });

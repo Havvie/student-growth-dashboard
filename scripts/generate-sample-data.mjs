@@ -65,9 +65,9 @@ const csv = (rows) => rows.map((r) => r.map((v) => {
 
 const present = (s, c) => !s.enrolledCycle || c.n >= s.enrolledCycle;
 
-// ---------- IXL-style diagnostic export (math) ----------
+// ---------- Math diagnostic export ----------
 for (const c of CYCLES) {
-  const rows = [['Student name', 'Student ID', 'Grade', 'Teacher', 'Subject', 'Diagnostic date', 'Overall level', ...STRANDS]];
+  const rows = [['Student name', 'Student ID', 'Grade', 'Teacher', 'Subject', 'Test date', 'Scale score', ...STRANDS]];
   for (const s of students.filter((s) => present(s, c))) {
     const overall = Math.round(s.grade * 100 + s.math.offset * 100 + 30 * s.math.pace * (c.n - 1) + noise(14));
     const strands = STRANDS.map((st) =>
@@ -76,7 +76,7 @@ for (const c of CYCLES) {
     const name = c.n === 1 && s.id === '410204' ? `  ${s.first}   ${s.last} ` : `${s.first} ${s.last}`;
     rows.push([name, s.id, s.grade, s.teacher, 'Math', c.date, overall, ...strands]);
   }
-  writeFileSync(join(OUT, `ixl-diagnostic-math_cycle${c.n}.csv`), csv(rows));
+  writeFileSync(join(OUT, `math-diagnostic_cycle${c.n}.csv`), csv(rows));
 }
 
 // Reading and ELA skill profiles use their own seeded stream, so adding them
@@ -90,9 +90,9 @@ for (const s of students) {
   s.weakEla = ELA_SKILLS[Math.floor(skillRand() * ELA_SKILLS.length)];
 }
 
-// ---------- Amira-style reading export ----------
+// ---------- Reading screener export ----------
 for (const c of CYCLES) {
-  const rows = [['Student First Name', 'Student Last Name', 'Student ID', 'Grade', 'Class', 'Assessment Date', 'ARM (Grade Level)', 'WCPM', ...READING_SKILLS.map((k) => `${k} (Grade Level)`)]];
+  const rows = [['Student First Name', 'Student Last Name', 'Student ID', 'Grade', 'Class', 'Assessment Date', 'Reading level (Grade Level)', 'WCPM', ...READING_SKILLS.map((k) => `${k} (Grade Level)`)]];
   for (const s of students.filter((s) => present(s, c))) {
     let arm = s.grade + s.read.offset + 0.3 * s.read.pace * (c.n - 1) + noise(0.14);
     arm = Math.max(0.1, Math.round(arm * 10) / 10);
@@ -105,10 +105,10 @@ for (const c of CYCLES) {
     });
     rows.push([s.first, s.last, s.id, s.grade, s.teacher, c.date, absent ? '' : arm.toFixed(1), absent ? '' : wcpm, ...skills]);
   }
-  writeFileSync(join(OUT, `amira-reading_cycle${c.n}.csv`), csv(rows));
+  writeFileSync(join(OUT, `reading-screener_cycle${c.n}.csv`), csv(rows));
 }
 
-// ---------- Illuminate-style benchmark export (ELA) ----------
+// ---------- ELA benchmark export ----------
 for (const c of CYCLES) {
   const rows = [['Local Student ID', 'Last Name', 'First Name', 'Grade Level', 'Test Title', 'Date Taken', 'Percent Correct', 'Performance Band', ...ELA_SKILLS.map((k) => `${k} (% correct)`)]];
   for (const s of students.filter((s) => present(s, c))) {
@@ -124,7 +124,7 @@ for (const c of CYCLES) {
   }
   // Data quirk: a duplicated row in the cycle 2 export.
   if (c.n === 2) rows.push(rows[3]);
-  writeFileSync(join(OUT, `illuminate-ela-benchmark_cycle${c.n}.csv`), csv(rows));
+  writeFileSync(join(OUT, `ela-benchmark_cycle${c.n}.csv`), csv(rows));
 }
 
 console.log(`Wrote ${CYCLES.length * 3} files for ${students.length} made-up students to ${OUT}`);

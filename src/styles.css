@@ -324,3 +324,32 @@ footer a { color: var(--accent); }
 .btn.danger { background: var(--crit-soft); color: var(--crit-ink); border-color: transparent; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- standards + next steps ---------- */
+.std { display: inline-block; margin-left: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; padding: 1px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); font-variant-numeric: tabular-nums; }
+.std-inline { margin-left: 6px; font-size: 0.72rem; color: var(--accent); font-weight: 700; }
+.std-field { position: relative; }
+.std-row { display: flex; gap: 6px; }
+.std-editor {
+  position: absolute; z-index: 15; top: calc(100% + 6px); left: 0; width: min(440px, calc(100vw - 32px));
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 12px 14px; display: grid; gap: 8px;
+}
+.std-editor p { margin: 0; }
+.std-editor code { background: var(--surface-2); padding: 0 4px; border-radius: 4px; }
+.std-edit-row { display: grid; grid-template-columns: 1fr 130px 56px; gap: 8px; align-items: center; font-size: 0.88rem; }
+.ns-pop {
+  position: fixed; z-index: 18; width: 330px; max-width: calc(100vw - 24px); pointer-events: none;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(8, 14, 20, 0.18); padding: 12px 14px; display: grid; gap: 8px;
+}
+.ns-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.ns-body { display: grid; gap: 8px; font-size: 0.88rem; }
+.ns-focus { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.ns-focus .eyebrow { width: 100%; }
+.ns-focus .std { margin-left: 0; }
+.ns-moves { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; color: var(--ink-2); }
+.ns-pace { color: var(--ink); font-weight: 700; list-style: none; margin-left: -18px; margin-top: 2px; }
+.ns-panel { background: var(--accent-soft); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; }
+@media (hover: none) { .ns-pop { display: none; } }
+.std-editor .std-edit-row { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink); font-size: 0.88rem; }

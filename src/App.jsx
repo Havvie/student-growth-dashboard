@@ -9,18 +9,22 @@ import ImportPanel from './components/ImportPanel.jsx';
 import StudentDetail from './components/StudentDetail.jsx';
 import StatusPill from './components/StatusPill.jsx';
 import ManualEntry from './components/ManualEntry.jsx';
+import StandardsPicker from './components/StandardsPicker.jsx';
+import { loadStandards, saveStandards } from './lib/standards.js';
 import { MANUAL_ID, manualToRecords, loadSaved, save } from './lib/manual.js';
 
 const SAMPLE_FILES = [1, 2, 3].flatMap((c) => [
-  `ixl-diagnostic-math_cycle${c}.csv`,
-  `amira-reading_cycle${c}.csv`,
-  `illuminate-ela-benchmark_cycle${c}.csv`,
+  `math-diagnostic_cycle${c}.csv`,
+  `reading-screener_cycle${c}.csv`,
+  `ela-benchmark_cycle${c}.csv`,
 ]);
 const REPO_URL = 'https://github.com/havvie/student-growth-dashboard';
 
 export default function App() {
   const [baseRecords, setRecords] = useState([]);
   const [myData, setMyData] = useState(() => loadSaved());
+  const [standards, setStandards] = useState(() => loadStandards());
+  useEffect(() => { saveStandards(standards); }, [standards]);
   useEffect(() => { save(myData); }, [myData]);
   const manualRecords = useMemo(() => (myData ? manualToRecords(myData) : []), [myData]);
   const records = useMemo(() => [...baseRecords, ...manualRecords], [baseRecords, manualRecords]);
@@ -28,7 +32,7 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [isSample, setIsSample] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [assessment, setAssessment] = useState('ixl');
+  const [assessment, setAssessment] = useState('math');
   const [gradePick, setGrade] = useState('all');
   const [asOf, setAsOf] = useState(null);
   const [openId, setOpenId] = useState(null);
@@ -44,7 +48,7 @@ export default function App() {
       setRecords(mergeRecords(results.map((r) => r.records)));
       setReports(results.map((r) => r.report).sort((a, b) => a.fileName.localeCompare(b.fileName)));
       setIsSample(true);
-      setAssessment('ixl');
+      setAssessment('math');
       setAsOf(null);
       setLoadError('');
     } catch (e) {
@@ -90,6 +94,8 @@ export default function App() {
   const canSkill = summaries.some((s) => s.strands);
   const opts = canSkill ? groupOpts : { ...groupOpts, mode: 'level' };
   const groups = useMemo(() => suggestGroups(summaries, { ...opts, previous }), [summaries, opts, previous]);
+  const groupOf = useMemo(() => new Map(groups.flatMap((g) => g.members.map((m) => [m.studentId, `${g.name} (${g.focus})`]))), [groups]);
+  const skillNames = useMemo(() => [...new Set(summaries.flatMap((s) => Object.keys(s.strands ?? {})))], [summaries]);
   const flagged = summaries.filter((s) => s.status.id === 'offTrack').sort((a, b) => a.gapCycles - b.gapCycles);
   const open = summaries.find((s) => s.studentId === openId);
 
@@ -123,7 +129,7 @@ export default function App() {
         {isSample && (
           <div className="demo-note">
             <strong>Demo data.</strong>
-            <span>All 24 students, teachers and scores are made up. Three data cycles of IXL-style math, Amira-style reading and Illuminate-style ELA exports for grades 2–5.</span>
+            <span>All 24 students, teachers and scores are made up. Three data cycles of a math diagnostic, a reading screener and an ELA benchmark for grades 2–5.</span>
           </div>
         )}
         {loadError && <div className="demo-note">{loadError}</div>}
@@ -136,7 +142,7 @@ export default function App() {
                 <div className="seg" role="group" aria-label="Assessment">
                   {assessments.map((a) => (
                     <button key={a.id} aria-pressed={a.id === assessmentId} onClick={() => { setAssessment(a.id); setOpenId(null); }}>
-                      {a.subject}<small>{a.label}</small>
+                      {a.label.toLowerCase().startsWith(a.subject.toLowerCase()) ? a.label : <>{a.subject}<small>{a.label}</small></>}
                     </button>
                   ))}
                 </div>
@@ -155,6 +161,7 @@ export default function App() {
                   {cycles.map((c) => <option key={c} value={c}>Cycle {c}</option>)}
                 </select>
               </div>
+              <StandardsPicker standards={standards} setStandards={setStandards} skills={skillNames} sampleGrade={grade === 'all' ? grades[0] : Number(grade)} />
             </div>
 
             <section className="tiles" aria-label="Summary">
@@ -183,7 +190,7 @@ export default function App() {
                 <span className="value num">
                   {k.medianPace != null ? `${Math.round(k.medianPace * 100)}%` : signed(median(summaries.map((s) => s.gap)), src)}
                 </span>
-                <span className="sub">{k.medianPace != null ? `of a typical year's growth (+${src.expectedGrowth} ${src.unit} per cycle)` : (src.id === 'illuminate' ? 'percent correct, goal 70%+' : `${src.unitPlural} above or below benchmark`)}</span>
+                <span className="sub">{k.medianPace != null ? `of a typical year's growth (+${src.expectedGrowth} ${src.unit} per cycle)` : (src.id === 'ela' ? 'percent correct, goal 70%+' : `${src.unitPlural} above or below benchmark`)}</span>
               </div>
             </section>
 
@@ -220,8 +227,8 @@ export default function App() {
               </section>
             </div>
 
-            <Roster summaries={summaries} cycles={cycles.filter((c) => c <= cycle)} src={src} onOpen={setOpenId} />
-            <Groups groups={groups} opts={opts} setOpts={setGroupOpts} src={src} canSkill={canSkill} asOfCycle={cycle} onOpen={setOpenId} />
+            <Roster summaries={summaries} cycles={cycles.filter((c) => c <= cycle)} src={src} onOpen={setOpenId} standards={standards} groupOf={groupOf} />
+            <Groups groups={groups} opts={opts} setOpts={setGroupOpts} src={src} canSkill={canSkill} asOfCycle={cycle} onOpen={setOpenId} standards={standards} />
           </>
         )}
 
@@ -236,7 +243,7 @@ export default function App() {
         </footer>
       </main>
 
-      {open && <StudentDetail student={open} onClose={() => setOpenId(null)} />}
+      {open && <StudentDetail student={open} onClose={() => setOpenId(null)} standards={standards} groupName={groupOf.get(open.studentId)} />}
     </>
   );
 }

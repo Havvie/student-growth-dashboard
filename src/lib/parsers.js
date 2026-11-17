@@ -12,7 +12,7 @@ export function parseExport(text, fileName = 'file.csv') {
     issues: [],
   };
   if (!source) {
-    report.issues.push({ level: 'error', text: `Columns not recognized (${headers.slice(0, 4).join(', ')}…). Use an IXL, Amira or Illuminate export, or the custom template.` });
+    report.issues.push({ level: 'error', text: `Columns not recognized (${headers.slice(0, 4).join(', ')}…). Use a math diagnostic, reading screener or ELA benchmark export, or the custom template.` });
     return { records: [], report };
   }
 
@@ -75,7 +75,7 @@ export function assessmentsIn(records) {
       out.set(r.assessment, { id: r.assessment, label: r.assessmentLabel, subject: r.subject, source: src });
     }
   }
-  const order = ['ixl', 'amira', 'illuminate'];
+  const order = ['math', 'reading', 'ela'];
   return [...out.values()].sort((a, b) => {
     const ia = order.indexOf(a.id); const ib = order.indexOf(b.id);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.label.localeCompare(b.label);

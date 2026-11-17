@@ -21,9 +21,18 @@ export function slope(points) {
 export function settingsFor(assessment, records) {
   const src = SOURCES[assessment] ?? SOURCES.generic;
   if (src.id !== 'generic') return src;
-  const r = records.find((x) => x.assessment === assessment && x.expectedGrowth != null);
-  const expectedGrowth = r?.expectedGrowth ?? 0;
-  return { ...src, label: records.find((x) => x.assessment === assessment)?.assessmentLabel ?? 'Custom', expectedGrowth, gapUnit: expectedGrowth || 5 };
+  const mine = records.filter((x) => x.assessment === assessment);
+  const expectedGrowth = mine.find((x) => x.expectedGrowth != null)?.expectedGrowth ?? 0;
+  const unit = mine.find((x) => x.unit)?.unit || src.unit;
+  return {
+    ...src,
+    label: mine[0]?.assessmentLabel ?? 'Custom',
+    unit,
+    unitLong: unit,
+    unitPlural: unit,
+    expectedGrowth,
+    gapUnit: expectedGrowth || 5,
+  };
 }
 
 // Build one summary per student for an assessment, using data up to and including `asOfCycle`.

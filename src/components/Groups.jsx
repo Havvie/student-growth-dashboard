@@ -28,7 +28,7 @@ export default function Groups({ groups, opts, setOpts, src, canSkill, asOfCycle
           <span className="eyebrow">Group by</span>
           <div className="seg" role="group" aria-label="Group by">
             <button aria-pressed={opts.mode === 'level'} onClick={() => setOpts({ ...opts, mode: 'level' })}>Overall level</button>
-            <button aria-pressed={opts.mode === 'skill'} disabled={!canSkill} title={canSkill ? '' : 'Needs strand scores (IXL Diagnostic)'}
+            <button aria-pressed={opts.mode === 'skill'} disabled={!canSkill} title={canSkill ? '' : 'Needs skill scores in the data'}
               onClick={() => setOpts({ ...opts, mode: 'skill' })}>Weakest skill</button>
           </div>
         </div>

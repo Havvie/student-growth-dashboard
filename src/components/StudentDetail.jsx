@@ -90,16 +90,17 @@ export default function StudentDetail({ student: s, onClose }) {
 
         {s.strands && (
           <div style={{ display: 'grid', gap: 6 }}>
-            <h3>Strand levels (latest)</h3>
-            <p className="muted small" style={{ margin: 0 }}>Black tick = this cycle's benchmark ({formatScore(s.latest.benchmark, src)}).</p>
+            <h3>Skill scores (latest)</h3>
+            <p className="muted small" style={{ margin: 0 }}>Black tick = this cycle's benchmark ({formatScore(s.latest.benchmark, src)}{src.unit === '%' ? '%' : ` ${src.unit}`}).</p>
             {Object.entries(s.strands).map(([name, v]) => {
-              const lo = s.latest.benchmark - 200; const hi = s.latest.benchmark + 100;
+              // Scale bars around the benchmark using the assessment's own units.
+              const lo = s.latest.benchmark - 7 * src.gapUnit; const hi = s.latest.benchmark + 3 * src.gapUnit;
               const pct = (x) => `${Math.max(0, Math.min(100, ((x - lo) / (hi - lo)) * 100))}%`;
               return (
                 <div className={`strand ${weak?.name === name ? 'weak' : ''}`} key={name}>
                   <span>{name}{weak?.name === name ? ' (weakest)' : ''}</span>
                   <span className="bar"><span style={{ width: pct(v) }} /><i style={{ left: pct(s.latest.benchmark) }} /></span>
-                  <span className="num r">{v}</span>
+                  <span className="num r">{formatScore(v, src)}</span>
                 </div>
               );
             })}

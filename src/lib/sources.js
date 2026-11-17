@@ -51,6 +51,13 @@ const get = (row, name) => {
 };
 
 export const IXL_STRANDS = ['Number sense', 'Algebra and algebraic thinking', 'Fractions', 'Geometry', 'Data and measurement'];
+export const AMIRA_SKILLS = ['Phonics', 'Fluency', 'Vocabulary', 'Comprehension'];
+export const ILLUMINATE_SKILLS = ['Key ideas and details', 'Craft and structure', 'Vocabulary in context', 'Language conventions'];
+
+// Read skill/strand columns into { skill: score }, skipping blanks.
+const skillsFrom = (row, names, suffix = '') => Object.fromEntries(
+  names.map((s) => [s, num(get(row, `${s}${suffix}`))]).filter(([, v]) => v != null),
+);
 
 export const SOURCES = {
   ixl: {
@@ -73,9 +80,7 @@ export const SOURCES = {
       teacher: clean(get(row, 'Teacher')),
       date: clean(get(row, 'Diagnostic date')),
       score: num(get(row, 'Overall level')),
-      strands: Object.fromEntries(
-        IXL_STRANDS.map((s) => [s, num(get(row, s))]).filter(([, v]) => v != null),
-      ),
+      strands: skillsFrom(row, IXL_STRANDS),
     }),
   },
   amira: {
@@ -98,6 +103,7 @@ export const SOURCES = {
       date: clean(get(row, 'Assessment Date')),
       score: num(get(row, 'ARM (Grade Level)')),
       extra: { WCPM: num(get(row, 'WCPM')) },
+      strands: skillsFrom(row, AMIRA_SKILLS, ' (Grade Level)'),
     }),
   },
   illuminate: {
@@ -124,6 +130,7 @@ export const SOURCES = {
         cycle: m ? Number(m[1]) : null,
         score: num(get(row, 'Percent Correct')),
         testTitle: title,
+        strands: skillsFrom(row, ILLUMINATE_SKILLS, ' (% correct)'),
       };
     },
   },
@@ -151,6 +158,12 @@ export const SOURCES = {
       benchmark: num(get(row, 'benchmark')),
       expectedGrowth: num(get(row, 'expected_growth')),
       assessmentName: clean(get(row, 'assessment')),
+      unit: clean(get(row, 'unit')),
+      // Any column named skill_<name> becomes a skill score, e.g. skill_Phonics.
+      strands: Object.fromEntries(Object.keys(row)
+        .filter((k) => /^skill_/i.test(k.trim()))
+        .map((k) => [k.trim().slice(6).replace(/_/g, ' '), num(row[k])])
+        .filter(([, v]) => v != null)),
     }),
   },
 };

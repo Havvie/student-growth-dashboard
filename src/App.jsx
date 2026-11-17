@@ -8,6 +8,8 @@ import Groups from './components/Groups.jsx';
 import ImportPanel from './components/ImportPanel.jsx';
 import StudentDetail from './components/StudentDetail.jsx';
 import StatusPill from './components/StatusPill.jsx';
+import ManualEntry from './components/ManualEntry.jsx';
+import { MANUAL_ID, manualToRecords, loadSaved, save } from './lib/manual.js';
 
 const SAMPLE_FILES = [1, 2, 3].flatMap((c) => [
   `ixl-diagnostic-math_cycle${c}.csv`,
@@ -17,12 +19,17 @@ const SAMPLE_FILES = [1, 2, 3].flatMap((c) => [
 const REPO_URL = 'https://github.com/havvie/student-growth-dashboard';
 
 export default function App() {
-  const [records, setRecords] = useState([]);
+  const [baseRecords, setRecords] = useState([]);
+  const [myData, setMyData] = useState(() => loadSaved());
+  useEffect(() => { save(myData); }, [myData]);
+  const manualRecords = useMemo(() => (myData ? manualToRecords(myData) : []), [myData]);
+  const records = useMemo(() => [...baseRecords, ...manualRecords], [baseRecords, manualRecords]);
+  const manualCount = useMemo(() => new Set(manualRecords.map((r) => r.studentId)).size, [manualRecords]);
   const [reports, setReports] = useState([]);
   const [isSample, setIsSample] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [assessment, setAssessment] = useState('ixl');
-  const [grade, setGrade] = useState('all');
+  const [gradePick, setGrade] = useState('all');
   const [asOf, setAsOf] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [groupOpts, setGroupOpts] = useState({ maxSize: 5, sameGrade: true, mode: 'level' });
@@ -51,7 +58,7 @@ export default function App() {
     if (!files.length) return;
     const results = await Promise.all(files.map(async (f) => parseExport(await f.text(), f.name)));
     const fresh = results.map((r) => r.records);
-    const next = isSample ? mergeRecords(fresh) : mergeRecords([records, ...fresh]);
+    const next = isSample ? mergeRecords(fresh) : mergeRecords([baseRecords, ...fresh]);
     setReports((prev) => (isSample ? results.map((r) => r.report) : [...prev, ...results.map((r) => r.report)]));
     if (next.length) {
       setRecords(next);
@@ -61,13 +68,15 @@ export default function App() {
       setAsOf(null);
     }
     document.getElementById('import')?.scrollIntoView({ behavior: 'smooth' });
-  }, [isSample, records]);
+  }, [isSample, baseRecords]);
 
   const assessments = useMemo(() => assessmentsIn(records), [records]);
   const current = assessments.find((a) => a.id === assessment) ?? assessments[0];
   const assessmentId = current?.id;
   const src = useMemo(() => (assessmentId ? settingsFor(assessmentId, records) : null), [assessmentId, records]);
 
+  const gradesHere = useMemo(() => new Set(records.filter((r) => r.assessment === assessmentId).map((r) => r.grade)), [records, assessmentId]);
+  const grade = gradePick !== 'all' && gradesHere.has(Number(gradePick)) ? gradePick : 'all';
   const scoped = useMemo(() => records.filter((r) => r.assessment === assessmentId && (grade === 'all' || r.grade === Number(grade))), [records, assessmentId, grade]);
   const cycles = useMemo(() => [...new Set(scoped.map((r) => r.cycle))].sort((a, b) => a - b), [scoped]);
   const cycle = asOf && cycles.includes(asOf) ? asOf : cycles[cycles.length - 1];
@@ -103,6 +112,7 @@ export default function App() {
           <div className="actions">
             <label className="btn primary" htmlFor="file-input">Import CSV exports</label>
             <input id="file-input" type="file" accept=".csv,text/csv" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
+            <a className="btn" href="#my-data">Enter your own data</a>
             <a className="btn" href="./sample-data/template.csv" download>CSV template</a>
             {!isSample && <button className="btn" onClick={loadSample}>Reload sample data</button>}
           </div>
@@ -173,7 +183,7 @@ export default function App() {
                 <span className="value num">
                   {k.medianPace != null ? `${Math.round(k.medianPace * 100)}%` : signed(median(summaries.map((s) => s.gap)), src)}
                 </span>
-                <span className="sub">{k.medianPace != null ? `of a typical year's growth (+${src.expectedGrowth} ${src.unit} per cycle)` : `${src.unitLong}, goal ${src.benchmark ? src.benchmark(3, 1) : ''}%+`}</span>
+                <span className="sub">{k.medianPace != null ? `of a typical year's growth (+${src.expectedGrowth} ${src.unit} per cycle)` : (src.id === 'illuminate' ? 'percent correct, goal 70%+' : `${src.unitPlural} above or below benchmark`)}</span>
               </div>
             </section>
 
@@ -214,6 +224,9 @@ export default function App() {
             <Groups groups={groups} opts={opts} setOpts={setGroupOpts} src={src} canSkill={canSkill} asOfCycle={cycle} onOpen={setOpenId} />
           </>
         )}
+
+        <ManualEntry data={myData} setData={setMyData} shownCount={manualCount}
+          onView={() => { setAssessment(MANUAL_ID); setGrade('all'); setAsOf(null); setOpenId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
 
         <ImportPanel reports={reports} onFiles={onFiles} />
 

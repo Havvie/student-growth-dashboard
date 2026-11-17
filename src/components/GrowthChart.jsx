@@ -30,7 +30,8 @@ export default function GrowthChart({ data, grades, src }) {
           <LineChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: 'var(--line-strong)' }} />
-            <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={(v) => formatScore(v, src)} />
+            <YAxis tickLine={false} axisLine={false} width={48}
+              domain={[(min) => Math.min(0, min), (max) => Math.max(0, max)]} tickFormatter={(v) => formatScore(v, src)} />
             <ReferenceLine y={0} stroke="var(--benchmark)" strokeDasharray="5 4" strokeWidth={1.5}
               label={{ value: 'Benchmark', position: 'insideTopLeft', fill: 'var(--ink-3)', fontSize: 12 }} />
             <Tooltip content={<Tip src={src} grades={grades} />} cursor={{ stroke: 'var(--line-strong)' }} />

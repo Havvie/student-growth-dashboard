@@ -79,29 +79,48 @@ for (const c of CYCLES) {
   writeFileSync(join(OUT, `ixl-diagnostic-math_cycle${c.n}.csv`), csv(rows));
 }
 
+// Reading and ELA skill profiles use their own seeded stream, so adding them
+// did not change any of the overall scores above.
+const skillRand = rng(1117);
+const skillNoise = (size) => (skillRand() + skillRand() + skillRand() - 1.5) * size;
+const READING_SKILLS = ['Phonics', 'Fluency', 'Vocabulary', 'Comprehension'];
+const ELA_SKILLS = ['Key ideas and details', 'Craft and structure', 'Vocabulary in context', 'Language conventions'];
+for (const s of students) {
+  s.weakReading = READING_SKILLS[Math.floor(skillRand() * READING_SKILLS.length)];
+  s.weakEla = ELA_SKILLS[Math.floor(skillRand() * ELA_SKILLS.length)];
+}
+
 // ---------- Amira-style reading export ----------
 for (const c of CYCLES) {
-  const rows = [['Student First Name', 'Student Last Name', 'Student ID', 'Grade', 'Class', 'Assessment Date', 'ARM (Grade Level)', 'WCPM']];
+  const rows = [['Student First Name', 'Student Last Name', 'Student ID', 'Grade', 'Class', 'Assessment Date', 'ARM (Grade Level)', 'WCPM', ...READING_SKILLS.map((k) => `${k} (Grade Level)`)]];
   for (const s of students.filter((s) => present(s, c))) {
     let arm = s.grade + s.read.offset + 0.3 * s.read.pace * (c.n - 1) + noise(0.14);
     arm = Math.max(0.1, Math.round(arm * 10) / 10);
     const wcpm = Math.round(Math.max(12, 18 + arm * 32 + noise(10)));
     // Data quirk: one student was absent for cycle 3 (blank score).
     const absent = c.n === 3 && s.id === '410210';
-    rows.push([s.first, s.last, s.id, s.grade, s.teacher, c.date, absent ? '' : arm.toFixed(1), absent ? '' : wcpm]);
+    const skills = READING_SKILLS.map((k) => {
+      const v = arm + skillNoise(0.25) + (k === s.weakReading ? -(0.5 + skillRand() * 0.5) : 0.15);
+      return absent ? '' : Math.max(0.1, v).toFixed(1);
+    });
+    rows.push([s.first, s.last, s.id, s.grade, s.teacher, c.date, absent ? '' : arm.toFixed(1), absent ? '' : wcpm, ...skills]);
   }
   writeFileSync(join(OUT, `amira-reading_cycle${c.n}.csv`), csv(rows));
 }
 
 // ---------- Illuminate-style benchmark export (ELA) ----------
 for (const c of CYCLES) {
-  const rows = [['Local Student ID', 'Last Name', 'First Name', 'Grade Level', 'Test Title', 'Date Taken', 'Percent Correct', 'Performance Band']];
+  const rows = [['Local Student ID', 'Last Name', 'First Name', 'Grade Level', 'Test Title', 'Date Taken', 'Percent Correct', 'Performance Band', ...ELA_SKILLS.map((k) => `${k} (% correct)`)]];
   for (const s of students.filter((s) => present(s, c))) {
     let pct = 70 + s.read.offset * 22 + 5 * (s.read.pace - 0.8) * (c.n - 1) + noise(7);
     pct = Math.round(Math.min(98, Math.max(12, pct)));
     const band = pct >= 80 ? 'Exceeds' : pct >= 70 ? 'Meets' : pct >= 55 ? 'Approaching' : 'Beginning';
     // Data quirk: grade written with a leading zero.
-    rows.push([s.id, s.last, s.first, `0${s.grade}`, `Gr ${s.grade} ELA Benchmark ${c.n}`, c.date, pct, band]);
+    const skills = ELA_SKILLS.map((k) => {
+      const v = pct + skillNoise(8) + (k === s.weakEla ? -(14 + skillRand() * 14) : 5);
+      return Math.round(Math.min(100, Math.max(0, v)));
+    });
+    rows.push([s.id, s.last, s.first, `0${s.grade}`, `Gr ${s.grade} ELA Benchmark ${c.n}`, c.date, pct, band, ...skills]);
   }
   // Data quirk: a duplicated row in the cycle 2 export.
   if (c.n === 2) rows.push(rows[3]);

@@ -35,7 +35,7 @@ export function parseExport(text, fileName = 'file.csv') {
     records.push({
       assessment,
       assessmentLabel: source.id === 'generic' ? r.assessmentName || 'Custom' : source.label,
-      subject: source.id === 'generic' ? r.assessmentName || 'Custom' : source.subject,
+      subject: source.id === 'generic' ? 'Custom' : source.subject,
       studentId: r.studentId,
       name: r.name || `Student ${r.studentId}`,
       grade: r.grade,
@@ -46,6 +46,7 @@ export function parseExport(text, fileName = 'file.csv') {
       benchmark,
       ...(r.strands && Object.keys(r.strands).length ? { strands: r.strands } : {}),
       ...(r.expectedGrowth != null ? { expectedGrowth: r.expectedGrowth } : {}),
+      ...(r.unit ? { unit: r.unit } : {}),
     });
   }
   report.kept = records.length;
